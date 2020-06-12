@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MAIN</title>
+</head>
+<body>
+    <form>
+        {% for x in range(0,n) %}
+            <li>
+                {{url[x]}}
+                {{url_word[x]}}
+                {{url_time[x]}}
+                <input type = 'submit' value = '유사도 분석' formaction = '/cosine' formmethod="post" x = "i"/>
+                <input type = 'submit' value = '단어 분석' formaction = '/word' formmethod="post" x = "i"/>
+            </li>
+        {% endfor %}
+    </form>
+</body>
+</html>
