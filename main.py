@@ -14,7 +14,6 @@ url_time = []
 tdf_word = {}
 tdf_list = []
 top_10 = {}
-top_3=[]
 def tdf(a):
     for x in clean_url:
         process_new_sentence(x)#모든 word를 다 넣기
@@ -124,6 +123,7 @@ def main():
 def cos_smillar():
     i = int(request.form['i'])
     cos = []
+    top_3 = []
     for x in range(0, len(clean_url)):
         if x != i:
             cos.append(cosine(x, i))  # i 빼고 검사해서 cos에 넣기
@@ -147,9 +147,8 @@ def cos_smillar():
 @app.route('/word', methods =['post'])
 def tdf_if_top10():
     i = int(request.form['i'])
-
+    top_word = []
     tdfif_word = tdf(i)
-
     count = 0
     if (len(tdfif_word) >= 10):
         while count != 10:
@@ -162,9 +161,10 @@ def tdf_if_top10():
             top_10[index] = large
             tdfif_word[index] = 0
             print(index, large)
+            top_word.append(index)
             count += 1
 
-    return render_template('cosine.html',top_10 = top_10)
+    return render_template('word.html',top_word = top_word)
 
 if __name__ == '__main__':
     url = ['http://db.apache.org/','http://buildr.apache.org/','https://jena.apache.org/','http://archiva.apache.org/']

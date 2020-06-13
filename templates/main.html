@@ -1,0 +1,20 @@
+  <table border="1">
+        <th> url  </th>
+        <th> url_word </th>
+        <th> url_time(sec) </th>
+        {% for x in range(0,n) %}
+            <tr>
+                <td>{{url[x]}}</td>
+                <td>{{url_word[x]}}</td>
+                <td>{{url_time[x]}}</td>
+                <td><form method="POST" action="/cosine">
+                    <input type="hidden" name="i" value={{ x }}>
+                    <input type=submit value= "유사도분석" >
+                </form></td>
+                <td><form method="POST" action="/word">
+                    <input type="hidden" name="i" value={{ x }}>
+                    <input type=submit value= "단어분석" >
+                </form></td>
+            </tr>
+        {% endfor %}
+    </table>
