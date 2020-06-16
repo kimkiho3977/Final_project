@@ -3,57 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <title>MAIN</title>
+    <style type="text/css">
+        #wrapper {
+            padding: 10px;
+            line-height: 3em;
+        border:1px solid #000;
+        }
+        table,td{
+            border: 1px solid #000;
+        }
+        th{
+            background-color: #bbdefb;
+        }
+        td{
+            background-color: #e3f2fd;
+        }
+        table{
+            width:60%;
+            height:100%;
+            border-collapse: collapse;
+            margin: auto;
+            text-align: center;
+        }
+    </style>
+
 </head>
 <body>
-    <h1> Enter the url</h1>
+<br><br>
+    <div id="wrapper" style="text-align: center" >
+        <font size="10">Enter the <strong>URL</strong></font>
     <form method="POST" action="/">
-        <input type="text" name = "url" maxlength="200" id="Text1">
-        <button type="submit">Submit</button>
-        {{ YoN }}
-   </form>
-
-<h2>Select file</h2>
-<button onclick="openTextFile()">Open</button>
-<div id="output">File contents Area</div>
-<script language="JavaScript">
-    function openTextFile(){
-        var input=document.createElement("input");
-
-        input.type="file";
-        input.accept="text/plain,text/html,.jsp";
-
-        input.click();
-        input.onchange=function (event) {
-            processFile(event.target.files[0]);
-        };
-    }
-    function processFile(file) {
-        var reader = new FileReader();
-        reader.readAsText(file,"UTF-8");
-
-        reader.onload=function () {
-            output.innerText=reader.result;
-        };
-    }
-</script>
+        <input type="text" name = "url" maxlength="300" style="text-align:center; width:500px; height:30px" id="Text1">
+    </form>
+    <form method="POST" action="/result">
+    <input type="file" name = "url" maxlength="200" id="Text1" style="text-align:center; width:200px; height:30px">
+    <button type="submit">Submit</button><br>
+        <font color="#ff8c00"><strong>{{ YoN }}</strong></font>
+    </form>
+    </div>
+<br><br>
     <table border="1">
-        <th> url  </th>
-        <th> url_word </th>
-        <th> url_time(sec) </th>
+        <th> URL  </th>
+        <th> URL_Word </th>
+        <th> URL_Time(sec) </th>
         {% for x in range(0,n) %}
             <tr>
                 <td>{{url[x]}}</td>
                 <td>{{url_word[x]}}</td>
                 <td>{{url_time[x]}}</td>
                 <td><form method="POST" action="/cosine">
-                    <input type="hidden" name="i" value={{ x }}> <input type=submit value= "유사도분석" >
+                    <input type=hidden name=i value={{ x }} /> <input type="submit" style="width:100%"value="유사도분석" >
                 </form></td>
                 <td><form method="POST" action="/word">
-                    <input type="hidden" name="i" value={{ x }}> <input type=submit value= "단어분석" >
+                    <input type="hidden" name="i" value={{ x }} /> <input type=submit style="width:100%"value= "단어분석" >
                 </form></td>
             </tr>
         {% endfor %}
     </table>
-
 </body>
 </html>
