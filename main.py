@@ -1,13 +1,21 @@
 import requests
 from flask import Flask, render_template, redirect, request, url_for
-from nltk import word_tokenize
 import re
 import math
 from bs4 import BeautifulSoup
 import time
 from numpy.linalg import norm
 import numpy
+from elasticsearch import Elasticsearch
+
 app = Flask(__name__)
+
+es_host = "127.0.0.1"
+es_port = "9200"
+
+es = Elasticsearch(es_host="127.0.0.1", es_port="9200")
+
+urls=[]
 clean_url=[]
 url_word = []
 url_time = []
@@ -107,6 +115,7 @@ def process_url(url):#url에서 단어 추출하기
     name = str(soup.find_all(['p', 'h1', 'h3', 'title', 'ul','ol']))
     name = re.sub('<.+?>', '', name, 0).strip()
     name = name.replace('\\n', "")
+    urls.append(url) #urls에 추가
     clean = cleantest(name)
     toknized = clean.split()#단어추출
     clean_url.append(clean)#clean_url에 집어넣기
@@ -115,9 +124,25 @@ def process_url(url):#url에서 단어 추출하기
     processing = time.time() - start
     url_time.append(processing)#처리시간 집어넣기
 
+    doct = {"url": url,
+           "word_count":count,
+            "taking time":processing
+           }
+
+    es.index(index="crawlling",id=count,body=doct)#엘라스틱 저장
 @app.route('/')
 def main():
-    return render_template('main.html',url=url,url_word=url_word,url_time=url_time,n = len(url))
+    return render_template('main.html',url=urls,url_word=url_word,url_time=url_time,n = len(urls))
+
+@app.route('/',methods=['post'])
+def temp():
+    url = request.form['url']
+    for i in urls:
+        if(url == i):
+            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
+    process_url(url)
+    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
+
 
 @app.route('/cosine',methods=['post'])
 def cos_smillar():
@@ -139,37 +164,52 @@ def cos_smillar():
             cos[index] = 0
             if (index >= i):  # i와 같고 클시에는 i는 cos에 포함 되어있지 않기 때문에 +1 해서 url 출력하기
                 index += 1
-            print(url[index])
-            top_3.append(url[index])
+            print(urls[index])
+            top_3.append(urls[index])
             count += 1
 
+        doct={}
+        for i in range(0,len(top_3)):
+            doct['i'] = top_3[i]
+        es.index(index="cosine", body=doct)  # 엘라스틱 저장
+
+    else:
+        top_3.append("fail: not enough urls, input at least 4 urls")
+
     return render_template('cosine.html',top_3 = top_3)
+
 @app.route('/word', methods =['post'])
 def tdf_if_top10():
     i = int(request.form['i'])
     top_word = []
-    tdfif_word = tdf(i)
-    count = 0
-    if (len(tdfif_word) >= 10):
-        while count != 10:
-            large = 0
-            index = 0
-            for x, y in tdfif_word.items():
-                if large < y:
-                    large = y
-                    index = x
-            top_10[index] = large
-            tdfif_word[index] = 0
-            print(index, large)
-            top_word.append(index)
-            count += 1
+    if(len(urls) > 1):
+        tdfif_word = tdf(i)
+        count = 0
+        if (len(tdfif_word) >= 10):
+            while count != 10:
+                large = 0
+                index = 0
+                for x, y in tdfif_word.items():
+                    if large < y:
+                        large = y
+                        index = x
+                top_10[index] = large
+                tdfif_word[index] = 0
+                print(index, large)
+                top_word.append(index)
+                count += 1
+        doct = {}
+        for i in range(0, len(top_word)):
+            doct['i'] = top_word[i]
+        es.index(index="top_word", body=doct)  # 엘라스틱 저장
+    else:
+        top_word.append("fail: not enough urls, input at least 2 urls")
+
 
     return render_template('word.html',top_word = top_word)
 
 if __name__ == '__main__':
-    url = ['http://db.apache.org/','http://buildr.apache.org/','https://jena.apache.org/','http://archiva.apache.org/']
+    # urls = ['http://db.apache.org/','http://buildr.apache.org/','https://jena.apache.org/','http://archiva.apache.org/']
     #url 예시들기
-    for x in url:
-       process_url(x)
 
     app.run()
