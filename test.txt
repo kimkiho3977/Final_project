@@ -1,0 +1,4 @@
+http://db.apache.org/
+http://buildr.apache.org/
+https://jena.apache.org/
+http://archiva.apache.org/
