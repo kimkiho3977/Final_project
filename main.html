@@ -11,12 +11,13 @@
         }
         table,td{
             border: 1px solid #000;
+            border-radius: 10px;
         }
         th{
-            background-color: #bbdefb;
+            background-color: antiquewhite;
         }
         td{
-            background-color: #e3f2fd;
+            background-color: whitesmoke;
         }
         table{
             width:60%;
@@ -31,24 +32,24 @@
 <body>
 <br><br>
     <div id="wrapper" style="text-align: center" >
-        <font size="10">Enter the <strong>URL</strong></font>
+        <font face="윤고딕" size="10">Enter the <strong>URL</strong></font>
     <form method="POST" action="/">
         <input type="hidden" name="hvalue" value='1'/>
-        <input type="text" name = "url" maxlength="300" style="text-align:center; width:500px; height:30px" id="Text1">
-        <button type="submit">Submit</button>
+        <input type="text" name = "url" placeholder="분석할 주소를 입력하세요" maxlength="300" style="text-align:center; width:500px; height:30px" id="Text1" >
+        <button type="submit">Enter</button>
     </form>
     <form method="POST" action="/" enctype="multipart/form-data" >
         <input type="hidden" name="hvalue" value="2"/>
         <input type="file" name = "url" maxlength="200"  style="text-align:center; width:200px; height:30px" id="Text1">
-        <button type="submit">Submit</button><br>
-        <font color="#ff8c00"><strong>{{ YoN }}</strong></font>
+        <button type="submit">Enter</button><br>
+        <font face="윤고딕" color="#ff8c00"><strong>{{ YoN }}</strong></font>
     </form>
     </div>
 <br><br>
-    <table border="1">
+    <table face="윤고딕" border="1">
         <th> URL  </th>
-        <th> URL_Word </th>
-        <th> URL_Time(sec) </th>
+        <th> 총 단어 수 </th>
+        <th> 처리 시간 ( 초 ) </th>
         {% for x in range(0,n) %}
             <tr>
                 <td>{{url[x]}}</td>
