@@ -1,6 +1,5 @@
 import requests
-from flask import Flask, render_template, redirect, request, url_for
-from nltk import word_tokenize
+from flask import Flask, render_template,request
 import re
 import math
 from bs4 import BeautifulSoup
@@ -128,19 +127,24 @@ def temp():
         if(url == i):
             return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
     process_url(url)
+    print(urls)
     return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
 
-@app.route('/',methods=['post'])
+@app.route('/result',methods=['post'])
 def temp2():
-    file = request.form['file']
-    f = open(file, 'r')
-    lines = f.readlines()
-    for url in lines:
+    file = request.files['url']
+    txt = file.read()
+    lines = txt.splitlines()
+
+    for j in lines:
+        url = j.decode('utf-8')
+        #파일로 올시 디코드를 해야한다
         for i in urls:
             if(url == i):
                 return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
                                        YoN="실패!(중복된 url 입력)")
         process_url(url)
+        print(urls)
     return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN="성공!")
 
 
