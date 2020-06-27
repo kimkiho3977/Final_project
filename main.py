@@ -122,30 +122,30 @@ def main():
 
 @app.route('/',methods=['post'])
 def temp():
-    url = request.form['url']
-    for i in urls:
-        if(url == i):
-            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
-    process_url(url)
-    print(urls)
-    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
-
-@app.route('/result',methods=['post'])
-def temp2():
-    file = request.files['url']
-    txt = file.read()
-    lines = txt.splitlines()
-
-    for j in lines:
-        url = j.decode('utf-8')
-        #파일로 올시 디코드를 해야한다
+    hv = int(request.form['hvalue'])
+    if hv == 1: #hidden 값에 따라 입력 방식 판단
+        url = request.form['url']
         for i in urls:
             if(url == i):
-                return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
-                                       YoN="실패!(중복된 url 입력)")
+                return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
         process_url(url)
         print(urls)
-    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN="성공!")
+        return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
+    else:
+        file = request.files['url']
+        txt = file.read()
+        lines = txt.splitlines()
+
+        for j in lines:
+            url = j.decode('utf-8')
+            # 파일로 올시 디코드를 해야한다
+            for i in urls:
+                if (url == i):
+                    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
+                                           YoN="실패!(중복된 url 입력)")
+            process_url(url)
+            print(urls)
+        return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN="성공!")
 
 
 @app.route('/cosine',methods=['post'])
@@ -196,7 +196,7 @@ def tdf_if_top10():
             top_word.append(index)
             count += 1
     else:
-	top_word.append("fail: not enough urls, input at least 4 urls")
+	    top_word.append("fail: not enough urls, input at least 4 urls")
     return render_template('word.html',top_word = top_word)
 
 if __name__ == '__main__':
