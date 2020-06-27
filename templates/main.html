@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MAIN</title>
+    <style type="text/css">
+        #wrapper {
+            padding: 10px;
+            line-height: 3em;
+        border:1px solid #000;
+        }
+        table,td{
+            border: 1px solid #000;
+        }
+        th{
+            background-color: #bbdefb;
+        }
+        td{
+            background-color: #e3f2fd;
+        }
+        table{
+            width:60%;
+            height:100%;
+            border-collapse: collapse;
+            margin: auto;
+            text-align: center;
+        }
+    </style>
+
+</head>
+<body>
+<br><br>
+    <div id="wrapper" style="text-align: center" >
+        <font size="10">Enter the <strong>URL</strong></font>
+    <form method="POST" action="/">
+        <input type="text" name = "url" maxlength="300" style="text-align:center; width:500px; height:30px" id="Text1">
+    </form>
+    <form method="POST" action="/result" enctype="multipart/form-data" >
+        <input type="file" name = "url" maxlength="200"  style="text-align:center; width:200px; height:30px" id="Text1">
+        <button type="submit">Submit</button><br>
+        <font color="#ff8c00"><strong>{{ YoN }}</strong></font>
+    </form>
+    </div>
+<br><br>
+    <table border="1">
+        <th> URL  </th>
+        <th> URL_Word </th>
+        <th> URL_Time(sec) </th>
+        {% for x in range(0,n) %}
+            <tr>
+                <td>{{url[x]}}</td>
+                <td>{{url_word[x]}}</td>
+                <td>{{url_time[x]}}</td>
+                <td><form method="POST" action="/cosine">
+                    <input type=hidden name=i value={{ x }} /> <input type="submit" style="width:100%"value="유사도분석" >
+                </form></td>
+                <td><form method="POST" action="/word" >
+                    <input type="hidden" name="i" value={{ x }} /> <input type=submit style="width:100%"value= "단어분석" >
+                </form></td>
+            </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

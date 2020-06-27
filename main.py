@@ -1,6 +1,5 @@
 import requests
-from flask import Flask, render_template, redirect, request, url_for
-from nltk import word_tokenize
+from flask import Flask, render_template,request
 import re
 import math
 from bs4 import BeautifulSoup
@@ -8,13 +7,13 @@ import time
 from numpy.linalg import norm
 import numpy
 app = Flask(__name__)
+urls=[]
 clean_url=[]
 url_word = []
 url_time = []
 tdf_word = {}
 tdf_list = []
 top_10 = {}
-top_3=[]
 def tdf(a):
     for x in clean_url:
         process_new_sentence(x)#모든 word를 다 넣기
@@ -108,6 +107,7 @@ def process_url(url):#url에서 단어 추출하기
     name = str(soup.find_all(['p', 'h1', 'h3', 'title', 'ul','ol']))
     name = re.sub('<.+?>', '', name, 0).strip()
     name = name.replace('\\n', "")
+    urls.append(url) #urls에 추가
     clean = cleantest(name)
     toknized = clean.split()#단어추출
     clean_url.append(clean)#clean_url에 집어넣기
@@ -118,12 +118,41 @@ def process_url(url):#url에서 단어 추출하기
 
 @app.route('/')
 def main():
-    return render_template('main.html',url=url,url_word=url_word,url_time=url_time,n = len(url))
+    return render_template('main.html',url=urls,url_word=url_word,url_time=url_time,n = len(urls))
+
+@app.route('/',methods=['post'])
+def temp():
+    url = request.form['url']
+    for i in urls:
+        if(url == i):
+            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
+    process_url(url)
+    print(urls)
+    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
+
+@app.route('/result',methods=['post'])
+def temp2():
+    file = request.files['url']
+    txt = file.read()
+    lines = txt.splitlines()
+
+    for j in lines:
+        url = j.decode('utf-8')
+        #파일로 올시 디코드를 해야한다
+        for i in urls:
+            if(url == i):
+                return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
+                                       YoN="실패!(중복된 url 입력)")
+        process_url(url)
+        print(urls)
+    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN="성공!")
+
 
 @app.route('/cosine',methods=['post'])
 def cos_smillar():
     i = int(request.form['i'])
     cos = []
+    top_3 = []
     for x in range(0, len(clean_url)):
         if x != i:
             cos.append(cosine(x, i))  # i 빼고 검사해서 cos에 넣기
@@ -139,17 +168,19 @@ def cos_smillar():
             cos[index] = 0
             if (index >= i):  # i와 같고 클시에는 i는 cos에 포함 되어있지 않기 때문에 +1 해서 url 출력하기
                 index += 1
-            print(url[index])
-            top_3.append(url[index])
+            print(urls[index])
+            top_3.append(urls[index])
             count += 1
+    else:
+        top_3.append("fail: not enough urls, input at least 4 urls")
 
     return render_template('cosine.html',top_3 = top_3)
+
 @app.route('/word', methods =['post'])
 def tdf_if_top10():
     i = int(request.form['i'])
-
+    top_word = []
     tdfif_word = tdf(i)
-
     count = 0
     if (len(tdfif_word) >= 10):
         while count != 10:
@@ -162,14 +193,14 @@ def tdf_if_top10():
             top_10[index] = large
             tdfif_word[index] = 0
             print(index, large)
+            top_word.append(index)
             count += 1
 
-    return render_template('cosine.html',top_10 = top_10)
+    return render_template('word.html',top_word = top_word)
 
 if __name__ == '__main__':
-    url = ['http://db.apache.org/','http://buildr.apache.org/','https://jena.apache.org/','http://archiva.apache.org/']
+    # urls = ['http://db.apache.org/','http://buildr.apache.org/','https://jena.apache.org/','http://archiva.apache.org/']
     #url 예시들기
-    for x in url:
-       process_url(x)
+
 
     app.run()
