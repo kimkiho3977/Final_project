@@ -182,7 +182,7 @@ def tdf_if_top10():
     top_word = []
     tdfif_word = tdf(i)
     count = 0
-    if (len(tdfif_word) >= 10):
+    if (len(urls) >= 4):
         while count != 10:
             large = 0
             index = 0
@@ -195,7 +195,8 @@ def tdf_if_top10():
             print(index, large)
             top_word.append(index)
             count += 1
-
+    else:
+	top_word.append("fail: not enough urls, input at least 4 urls")
     return render_template('word.html',top_word = top_word)
 
 if __name__ == '__main__':
