@@ -3,34 +3,13 @@
 <body>
 <h1> Enter the url</h1>
 <form method="POST" action="/result">
-<input type="text" name = "url" maxlength="200" id="Text1">
-&nbsp;&nbsp;
-<button type="submit">Submit</button>
-&nbsp;&nbsp;
+    <input type="text" name="url">
+&nbsp;&nbsp;<button type="submit">Submit</button><br/>
 </form>
-<h2>Select file</h2>
-<button onclick="openTextFile()">Open</button>
-<div id="output">File contents Area</div>
-<script language="JavaScript">
-    function openTextFile(){
-        var input=document.createElement("input");
-
-        input.type="file";
-        input.accept="text/plain,text/html,.jsp";
-
-        input.click();
-        input.onchange=function (event) {
-            processFile(event.target.files[0]);
-        };
-    }
-    function processFile(file) {
-        var reader = new FileReader();
-        reader.readAsText(file,"UTF-8");
-
-        reader.onload=function () {
-            output.innerText=reader.result;
-        };
-    }
-</script>
+<h2>Select File</h2>
+<form method="POST" action="/result" encType="multipart/form-data">
+    <input type="file" name="file">
+    <button type="submit" val="file">Submit</button>
+</form>
 </body>
 </html>
