@@ -1,11 +1,13 @@
 import requests
-from flask import Flask, render_template, redirect, request, url_for
-from nltk import word_tokenize
+from flask import Flask, render_template,request
 import re
 import math
 from bs4 import BeautifulSoup
 import time
 from numpy.linalg import norm
+from urllib.request import urlopen
+from urllib.error import HTTPError
+from urllib.error import URLError
 import numpy
 app = Flask(__name__)
 urls=[]
@@ -117,18 +119,61 @@ def process_url(url):#url에서 단어 추출하기
     processing = time.time() - start
     url_time.append(processing)#처리시간 집어넣기
 
+def Errorcheck(url):
+    try:
+        html = urlopen(url)
+    except HTTPError as e:
+        return None
+    except URLError as e:
+        return None
+    else:
+        process_url(url)
+        return 'TRUE'
 @app.route('/')
 def main():
     return render_template('main.html',url=urls,url_word=url_word,url_time=url_time,n = len(urls))
 
 @app.route('/',methods=['post'])
 def temp():
-    url = request.form['url']
-    for i in urls:
-        if(url == i):
-            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
-    process_url(url)
-    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
+    hv = int(request.form['hvalue'])
+    if hv == 1: #hidden 값에 따라 입력 방식 판단
+        url = request.form['url']
+        for i in urls:
+            if(url == i):
+                return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
+        check = Errorcheck(url)
+        if check == 'TRUE':
+            print ('not Error')
+        else:
+            print ('ERROR')
+            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
+                                   YoN="실패!(유효하지 않은 URL)")
+        print(urls)
+        return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
+    else:
+        file = request.files['url']
+        txt = file.read()
+        lines = txt.splitlines()
+        overlap = 'FALSE'
+        YON_message = "성공!"
+        for j in lines:
+            url = j.decode('utf-8')
+            # 파일로 올시 디코드를 해야한다
+            for i in urls:
+                if (url == i):
+                    overlap = 'TRUE'
+            if overlap == 'FALSE':
+                check = Errorcheck(url)
+                if check == 'TRUE':
+                    print('not Error')
+                else:
+                    print('ERROR')
+                    YON_message= "유효하지 않은 URL 존재 "
+                print(urls)
+            else:
+                YON_message = "중복된 URL 존재 "
+            overlap = 'FALSE'
+        return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN= YON_message)
 
 
 @app.route('/cosine',methods=['post'])
@@ -165,7 +210,7 @@ def tdf_if_top10():
     top_word = []
     tdfif_word = tdf(i)
     count = 0
-    if (len(tdfif_word) >= 10):
+    if (len(urls) >= 4):
         while count != 10:
             large = 0
             index = 0
@@ -178,7 +223,8 @@ def tdf_if_top10():
             print(index, large)
             top_word.append(index)
             count += 1
-
+    else:
+	    top_word.append("fail: not enough urls, input at least 4 urls")
     return render_template('word.html',top_word = top_word)
 
 if __name__ == '__main__':
