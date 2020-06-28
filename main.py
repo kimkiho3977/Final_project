@@ -7,15 +7,17 @@ from bs4 import BeautifulSoup
 import time
 from numpy.linalg import norm
 import numpy
+from urllib.request import urlopen
+from urllib.error import HTTPError
+from urllib.error import URLError
 es = Elasticsearch([{'host':"127.0.0.1",'port':"9200"}],timeout=3000)
 app = Flask(__name__)
-urls=[]
-clean_url=[]
-url_word = []
-url_time = []
-tdf_word = {}
-tdf_list = []
-top_10 = {}
+urls=[]# url
+clean_url=[]# url크롤링
+url_word = []# url 단어개수
+url_time = []# 크롤링 걸링시간
+tdf_word = {}# tdfif할때 필요한거
+tdf_list = []# tdfif할때 필요한거
 def tdf(a):
     for x in clean_url:
         process_new_sentence(x)#모든 word를 다 넣기
@@ -124,35 +126,80 @@ def process_url(url):#url에서 단어 추출하기
     }
     es.index(index = "url", body = body1)
 
+
+def Errorcheck(url):
+    try:
+        html = urlopen(url)
+    except HTTPError as e:
+        return None
+    except URLError as e:
+        return None
+    else:
+        process_url(url)
+        return 'TRUE'
+
+
 @app.route('/')
 def main():
-    return render_template('main.html',url=urls,url_word=url_word,url_time=url_time,n = len(urls))
+    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls))
 
-@app.route('/',methods=['post'])
+
+@app.route('/', methods=['post'])
 def temp():
     hv = int(request.form['hvalue'])
-    if hv == 1: #hidden 값에 따라 입력 방식 판단
+    if hv == 1:  # hidden 값에 따라 입력 방식 판단
         url = request.form['url']
         for i in urls:
-            if(url == i):
-                return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN = "실패!(중복된 url 입력)")
-        process_url(url)
-        return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n = len(urls), YoN = "성공!")
-    else:
-        file = request.files['url']
-        texture = file.read()
-        lines = texture.splitlines()
-
-        for j in lines:
-            url = j.decode('utf-8')
-            # 파일로 올시 디코드를 해야한다
-            for i in urls:
-                if (url == i):
-                    return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
-                                           YoN="실패!(중복된 url 입력)")
-            process_url(url)
+            if (url == i):
+                return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
+                                       YoN="실패!(중복된 url 입력)")
+        check = Errorcheck(url)
+        if check == 'TRUE':
+            print('not Error')
+        else:
+            print('ERROR')
+            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
+                                   YoN="실패!(유효하지 않은 URL)")
+        print(urls)
         return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls), YoN="성공!")
-
+    else :
+        if hv == 2:
+            file = request.files['url']
+            txt = file.read()
+            lines = txt.splitlines()
+            overlap = 'FALSE'
+            YON_message = "성공!"
+            for j in lines:
+                url = j.decode('utf-8')
+                # 파일로 올시 디코드를 해야한다 리눅스에서 깨질 위험이 있다
+                for i in urls:
+                    if (url == i):
+                        overlap = 'TRUE'
+                if overlap == 'FALSE':
+                    check = Errorcheck(url)
+                    if check == 'TRUE':
+                        print('not Error')
+                    else:
+                        print('ERROR')
+                        YON_message = "유효하지 않은 URL 존재 "
+                    print(urls)
+                else:
+                    YON_message = "중복된 URL 존재 "
+                overlap = 'FALSE'
+            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
+                               YoN=YON_message)
+        else :
+            del urls[:]
+            del clean_url[:]
+            del url_word[:]
+            del url_time[:]
+            tdf_word.clear()
+            del tdf_list[:]
+            es.indices.delete(index="top_3")
+            es.indices.delete(index="top_10")
+            es.indices.delete(index="url")
+            return render_template('main.html', url=urls, url_word=url_word, url_time=url_time, n=len(urls),
+                               YoN="초기화완료")
 
 @app.route('/cosine',methods=['post'])
 def cos_smillar():
@@ -176,15 +223,16 @@ def cos_smillar():
                 index += 1
             top_3.append(urls[index])
             count += 1
+        body1 = {
+            'url': urls[i],
+            'first': top_3[0],
+            'second': top_3[1],
+            'third': top_3[2]
+        }
+        es.index(index="top_3", body=body1)
     else:
         top_3.append("fail: not enough urls, input at least 4 urls")
-    body1 = {
-        'url': urls[i],
-        'first': top_3[0],
-         'second': top_3[1],
-         'third': top_3[2]
-        }
-    es.index(index="top_3", body=body1)
+
 
     return render_template('cosine.html',top_3 = top_3)
 
@@ -202,31 +250,36 @@ def tdf_if_top10():
                 if large < y:
                     large = y
                     index = x
-            top_10[index] = large
             tdfif_word[index] = 0
             top_word.append(index)
             count += 1
+
+        body1 = {
+            'url': urls[i],
+            'first': top_word[0],
+            'second': top_word[1],
+            'third': top_word[2],
+            'fourth': top_word[3],
+            'fifth': top_word[4],
+            "sisxth": top_word[5],
+            "seventh": top_word[6],
+            'eight': top_word[7],
+            'nineth': top_word[8],
+            'tenth': top_word[9]
+        }
+        es.index(index="top_10", body=body1)
     else:
 	    top_word.append("fail: not enough urls, input at least 4 urls")
-    body1 = {
-        'url': urls[i],
-        'first': top_word[0],
-        'second': top_word[1],
-        'third': top_word[2],
-        'fourth': top_word[3],
-        'fifth':top_word[4] ,
-        "sisxth":top_word[5],
-        "seventh":top_word[6],
-        'eight':top_word[7],
-        'nineth':top_word[8],
-        'tenth':top_word[9]
-    }
-    es.index(index="top_3", body=body1)
+
     return render_template('word.html',top_word = top_word)
 
 if __name__ == '__main__':
     # urls = ['http://db.apache.org/','http://buildr.apache.org/','https://jena.apache.org/','http://archiva.apache.org/']
     #url 예시들기
 
-
     app.run()
+
+
+
+
+
